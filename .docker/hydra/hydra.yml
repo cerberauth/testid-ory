@@ -1,50 +1,9 @@
 serve:
   cookies:
     same_site_mode: Lax
-
-  admin:
-    cors:
-      enabled: true
-      allowed_origins:
-        - https://taco.cerberauth.com
-        - http://localhost:3000
-      allowed_methods:
-        - POST
-        - GET
-        - PUT
-        - PATCH
-        - DELETE
-      allowed_headers:
-        - Authorization
-      exposed_headers:
-        - Content-Type
-
   public:
     cors:
       enabled: true
-      allowed_origins:
-        - "*"
-      allowed_methods:
-        - POST
-        - GET
-      allowed_headers:
-        - Authorization
-      exposed_headers:
-        - Content-Type
-
-urls:
-  self:
-    issuer: https://testid.cerberauth.com
-    admin: http://localhost:4445/
-  consent: https://testid.cerberauth.com/consent
-  login: https://testid.cerberauth.com/login
-  # registration: https://testid.cerberauth.com/login
-  logout: https://testid.cerberauth.com/logout
-  error: https://testid.cerberauth.com/error
-
-secrets:
-  system:
-    - youReallyNeedToChangeThis
 
 oauth2:
   allowed_top_level_claims:
@@ -59,7 +18,6 @@ oauth2:
   grant:
     jwt:
       iat_optional: true
-
   pkce:
     enforced_for_public_clients: false
     enforced: false
@@ -73,9 +31,9 @@ oidc:
       - offline
       - offline_access
     enabled: true
-
   subject_identifiers:
     supported_types:
+      - pairwise
       - public
 
 strategies:
