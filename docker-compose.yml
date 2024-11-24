@@ -2,13 +2,23 @@ services:
   hydra:
     image: oryd/hydra:v2.2
     command: serve public --dev -c /etc/config/hydra/hydra.yml
-    volumes:
-      - .docker/hydra:/etc/config/hydra:ro
+    configs:
+      - source: hydra_config
+        target: /etc/config/hydra/hydra.yml
     environment:
-      - DSN=postgres://hydra:secret@hydra-postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-    env_file:
-      - .env.production
-      - .env
+      - LOG_LEVEL=${HYDRA_LOG_LEVEL:-warn}
+      - LOG_FORMAT=${HYDRA_LOG_FORMAT:-json}
+      - DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@hydra-postgresd:5432/${POSTGRES_DB}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - URLS_SELF_ISSUER=${URLS_SELF_ISSUER:-http://localhost:4444/}
+      - URLS_SELF_PUBLIC=${URLS_SELF_PUBLIC:-http://localhost:4444/}
+      - URLS_LOGIN=${URLS_LOGIN}
+      - URLS_REGISTRATION=${URLS_REGISTRATION}
+      - URLS_CONSENT=${URLS_CONSENT}
+      - URLS_LOGOUT=${URLS_LOGOUT}
+      - URLS_ERROR=${URLS_ERROR}
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=${OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT}
+      - SECRETS_COOKIE=${SECRETS_COOKIE}
+      - SECRETS_SYSTEM=${SECRETS_SYSTEM}
     restart: unless-stopped
     depends_on:
       - hydra-migrate
@@ -17,15 +27,23 @@ services:
   hydra-admin:
     image: oryd/hydra:v2.2
     command: serve admin -c /etc/config/hydra/hydra.yml
-    ports:
-      - 4445:4445
-    volumes:
-      - .docker/hydra:/etc/config/hydra:ro
+    configs:
+      - source: hydra_config
+        target: /etc/config/hydra/hydra.yml
     environment:
-      - DSN=postgres://hydra:secret@hydra-postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-    env_file:
-      - .env.production
-      - .env
+      - LOG_LEVEL=${HYDRA_LOG_LEVEL:-warn}
+      - LOG_FORMAT=${HYDRA_LOG_FORMAT:-json}
+      - DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@hydra-postgresd:5432/${POSTGRES_DB}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - URLS_SELF_ISSUER=${URLS_SELF_ISSUER:-http://localhost:4444/}
+      - URLS_SELF_PUBLIC=${URLS_SELF_PUBLIC:-http://localhost:4444/}
+      - URLS_LOGIN=${URLS_LOGIN}
+      - URLS_REGISTRATION=${URLS_REGISTRATION}
+      - URLS_CONSENT=${URLS_CONSENT}
+      - URLS_LOGOUT=${URLS_LOGOUT}
+      - URLS_ERROR=${URLS_ERROR}
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=${OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT}
+      - SECRETS_COOKIE=${SECRETS_COOKIE}
+      - SECRETS_SYSTEM=${SECRETS_SYSTEM}
     restart: unless-stopped
     depends_on:
       - hydra-migrate
@@ -33,27 +51,37 @@ services:
 
   hydra-migrate:
     image: oryd/hydra:v2.2
+    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
+    configs:
+      - source: hydra_config
+        target: /etc/config/hydra/hydra.yml
     depends_on:
       - hydra-postgresd
     environment:
-      - DSN=postgres://hydra:secret@hydra-postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-    env_file:
-      - .env.production
-      - .env
-    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-    volumes:
-      - .docker/hydra:/etc/config/hydra:ro
+      - LOG_LEVEL=${HYDRA_LOG_LEVEL:-warn}
+      - LOG_FORMAT=${HYDRA_LOG_FORMAT:-json}
+      - DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@hydra-postgresd:5432/${POSTGRES_DB}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - URLS_SELF_ISSUER=${URLS_SELF_ISSUER:-http://localhost:4444/}
+      - URLS_SELF_PUBLIC=${URLS_SELF_PUBLIC:-http://localhost:4444/}
+      - URLS_LOGIN=${URLS_LOGIN}
+      - URLS_REGISTRATION=${URLS_REGISTRATION}
+      - URLS_CONSENT=${URLS_CONSENT}
+      - URLS_LOGOUT=${URLS_LOGOUT}
+      - URLS_ERROR=${URLS_ERROR}
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=${OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT}
+      - SECRETS_COOKIE=${SECRETS_COOKIE}
+      - SECRETS_SYSTEM=${SECRETS_SYSTEM}
     restart: on-failure
 
   hydra-postgresd:
     image: postgres:16
     restart: always
     volumes:
-      - hdyra_db_data:/var/lib/postgresql/data
+      - hydra_db_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=hydra
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=hydra
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -64,13 +92,18 @@ services:
     image: oryd/oathkeeper:v0.40
     depends_on:
       - hydra
-    ports:
-      - 4455:4455
-    command:
-      serve proxy -c "/etc/config/oathkeeper/oathkeeper.yml"
+      - hydra-login-consent
+    command: serve proxy -c "/etc/config/oathkeeper/oathkeeper.yml"
+    configs:
+      - source: oathkeeper_config
+        target: /etc/config/oathkeeper/oathkeeper.yml
+      - source: oathkeeper_rules
+        target: /etc/config/oathkeeper/access-rules.yml
+    environment:
+      - LOG_LEVEL=${OATHKEEPER_LOG_LEVEL:-warn}
+      - LOG_FORMAT=${OATHKEEPER_LOG_FORMAT:-json}
+      - SERVE_PROXY_PORT=${SERVE_PROXY_PORT:-4455}
     restart: on-failure
-    volumes:
-      - .docker/oathkeeper:/etc/config/oathkeeper:ro
 
   hydra-login-consent:
     build:
@@ -82,5 +115,22 @@ services:
     depends_on:
       - hydra-admin
 
+  hydra-cleanup:
+    build:
+      context: ./hydra-cleanup
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra-admin:4445
+    restart: on-failure
+    depends_on:
+      - hydra-admin
+
+configs:
+  hydra_config:
+    file: .docker/hydra/hydra.yml
+  oathkeeper_config:
+    file: .docker/oathkeeper/oathkeeper.yml
+  oathkeeper_rules:
+    file: .docker/oathkeeper/access-rules.yml
+
 volumes:
-  hdyra_db_data:
+  hydra_db_data:
