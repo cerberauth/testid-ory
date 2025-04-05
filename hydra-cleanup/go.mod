@@ -1,6 +1,6 @@
 module github.com/cerberauth/testid/hydra-cleanup
 
-go 1.23
+go 1.24
 
 require (
 	github.com/ory/hydra-client-go/v2 v2.2.1
