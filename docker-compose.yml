@@ -89,7 +89,7 @@ services:
       retries: 5
 
   oathkeeper:
-    image: oryd/oathkeeper:v0.40
+    image: oryd/oathkeeper:v25.4
     depends_on:
       - hydra
       - hydra-login-consent
