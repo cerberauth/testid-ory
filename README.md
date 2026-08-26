@@ -1,5 +1,14 @@
 # TestID
 
+## Deprecation Notice
+
+**This service is deprecated.** Replaced by [StubIdP](https://github.com/cerberauth/stubidp) — a lightweight, portable mock OpenID Connect server better suited for testing use cases.
+
+- **StubIdP repo**: https://github.com/cerberauth/stubidp
+- **StubIdP service**: https://stubidp.cerberauth.com/
+
+This project remains available as an example of Ory Hydra integration.
+
 TestID - OpenID Connect Provider for testing and development environments.
 
 This project is a simple OpenID Connect Provider that can be used for testing and development environments. It provides a simple way to test OAuth 2.0 and OpenID Connect flows. It is not intended for production use!
